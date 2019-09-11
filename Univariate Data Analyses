@@ -1,0 +1,87 @@
+## BASIC ANALYSIS OF UNIVARIATE DATA USING PYTHON
+## Here, we will analyze NHANES dataset which consist of some variables that describe about health predictor, such as blood pressure, wheight, height, body mass index, etc . I reccomend to perform this code through jupyter environment
+
+## 1. Import the relevant libraries
+%matplotlib inline
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+import numpy as np
+
+## 2. Load the dataset
+da = pd.read_csv("nhanes_2015_2016.csv")
+da.show()
+
+## 3. Frequency tables
+##    a. Counting the value of the variable. This case, we want to count the education (DMDEDUC2) frequency.
+da.DMDEDUC2.value_counts()
+print(da.DMDEDUC2.value_counts().sum())
+
+##    b. Counting the missing value in the education variable.
+pd.isnull(da.DMDEDUC2).sum()
+
+##    c. Replacing the code of education level.
+da["DMDEDUC2x"] = da.DMDEDUC2.replace({1: "<9", 2: "9-11", 3: "HS/GED", 4: "Some college/AA", 5: "College", 7: "Refused", 9: "Don't know"})
+da.DMDEDUC2x.value_counts()
+
+##    d. Counting the value of variable into percentages or proportion. At this case, we use gender ("RIAGENDER")
+x = da.RIAGENDR.value_counts()
+x / x.sum()
+
+##    e. Counting the value as I show before exclude the missing value. If we want to include the missing value, we need to use fillna. 
+da["DMDEDUC2x"] = da.DMDEDUC2x.fillna("Missing")
+x = da.DMDEDUC2x.value_counts()
+x / x.sum()
+
+## 4. Numerical Summaries
+##    a. Showing the description of numerical variable. At this case, we need to exclude the missing value so we use the "dropna". "BMXWT" means Body Weight
+da.BMXWT.dropna().describe()
+
+##    b. Manually calculate individual summary statistics from one column of a data set.
+x = da.BMXWT.dropna()  # Extract all non-missing values of BMXWT into a variable called 'x'
+print(x.mean()) # in Pandas
+print(np.mean(x)) # in Numpy
+
+print(x.median())
+print(np.percentile(x, 50))  # 50%, same as the median
+print(np.percentile(x, 75))  # 75%
+print(x.quantile(0.75)) # in Pandas for 75%
+
+Y=da.BMXWT.dropna()
+print(Y.std()) # for standard deviation
+
+##    c. Calculating the portion of people who have pre hypertension diastolic (the blood pressure is more than 80 in the beginning and less than 89 in the end)
+np.mean((da.BPXDI1 >= 80) & (da.BPXDI2 <= 89))
+
+##    d. Combining the portion of people who have pre hypertension diastolic and systolic. BPXSY : systolic, BPXDI : Diastolic
+a = (da.BPXSY1 >= 120) & (da.BPXSY2 <= 139)
+b = (da.BPXDI1 >= 80) & (da.BPXDI2 <= 89)
+print(np.mean(a | b))
+
+## 5. Graphical Summaries
+##    a. Showing the histogram, exclude the missing value (dropna). At this point, we use body weight data (BMXWT)
+sns.distplot(da.BMXWT.dropna())
+
+##    b. Creating the boxplot from some variables.
+bp = sns.boxplot(da.loc[:, ["BPXSY1", "BPXSY2","BPXDI1", "BPXDI2"]])
+_ = bp.set_ylabel("Blood pressure in mm/Hg")
+
+##    c. Creating the stratification of blood pressure grouped by age range
+da["agegrp"] = pd.cut(da.RIDAGEYR, [18, 30, 40, 50, 60, 70, 80])
+plt.figure(figsize=(12, 5)) 
+sns.boxplot(x="agegrp", y="BPXSY1", data=da)
+
+##    d. Adding the gender variable which previously contain two variable (blood pressure and age)
+da["agegrp"] = pd.cut(da.RIDAGEYR, [18, 30, 40, 50, 60, 70, 80])
+plt.figure(figsize=(12, 5))
+sns.boxplot(x="agegrp", y="BPXSY1", hue="RIAGENDRx", data=da)
+
+## or
+da["agegrp"] = pd.cut(da.RIDAGEYR, [18, 30, 40, 50, 60, 70, 80])
+plt.figure(figsize=(12, 5))
+sns.boxplot(x="RIAGENDRx", y="BPXSY1", hue="agegrp", data=da)
+
+##    e. Try yourself to interpret this meaning of syntax
+x = da.groupby(["DMDEDUC2",'RIAGENDR'])["agegrp"].value_counts()
+x/x.sum()
+
